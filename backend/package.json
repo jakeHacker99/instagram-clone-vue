@@ -5,11 +5,14 @@
   "main": "index.js",
   "scripts": {
     "start": "nodemon index.js",
-    "deploy": "heroku builds:create -a my-instaclone"
+    "deploy": "heroku builds:create -a my-quasagram-clone"
   },
   "author": "",
   "license": "ISC",
-  "devDependencies": {
+  "dependencies": {
+    "express": "^4.17.1",
+    "express-dependencies": "^1.2.2",
+    "firebase-admin": "^9.5.0",
     "nodemon": "^2.0.7"
   }
 }

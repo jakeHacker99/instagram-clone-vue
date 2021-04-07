@@ -20,3 +20,10 @@ quasar build
 
 ### Customize the configuration
 See [Configuring quasar.conf.js](https://quasar.dev/quasar-cli/quasar-conf-js).
+
+
+### Run backend in backend folder with this command:
+```bash
+npm run start
+```
+

@@ -18,6 +18,7 @@
       <q-btn
         v-if="hasCameraSupport"
         @click="captureImage"
+        :disable="imageCaptured"
         color="grey-10"
         icon="eva-camera"
         size="lg"
@@ -39,7 +40,7 @@
         <q-input
           v-model="post.caption"
           class="col col-sm-6"
-          label="Caption"
+          label="Caption *"
           dense
         />
       </div>
@@ -53,8 +54,8 @@
         >
           <template v-slot:append>
             <q-btn
-            v-if="!locationLoading && locationSupported"
-            @click="getLocation"
+              v-if="!locationLoading && locationSupported"
+              @click="getLocation"
               icon="eva-navigation-2-outline"
               dense
               flat
@@ -65,6 +66,8 @@
       </div>
       <div class="row justify-center q-mt-lg">
         <q-btn
+          @click="addPost()"
+          :disable="!post.caption || !post.photo"
           color="primary"
           label="Post Image"
           rounded
@@ -98,8 +101,7 @@ export default {
   },
   computed: {
     locationSupported() {
-      if('geolocation' in navigator) return 
-      true
+      if ('geolocation' in navigator) return true
       return false
     }
   },
@@ -174,41 +176,61 @@ export default {
     },
     getLocation() {
       this.locationLoading = true
-
-    navigator.geolocation.getCurrentPosition(pos => {
-      this.getCityAndCountry(pos)
-    },err => {
-      console.log('err', err)
-    }, {timeout: 7000})  
+      navigator.geolocation.getCurrentPosition(position => {
+        this.getCityAndCountry(position)
+      }, err => {
+        this.locationError()
+      }, { timeout: 7000 })
     },
-    getCityAndCountry(pos){
-      let apiUrl = `https://geocode.xyz/${pos.coords.latitude},${pos.coords.longitude}?json=1`
-      this.$axios.get(apiUrl).then(result =>{
+    getCityAndCountry(position) {
+      let apiUrl = `https://geocode.xyz/${ position.coords.latitude },${ position.coords.longitude }?json=1`
+      this.$axios.get(apiUrl).then(result => {
         this.locationSuccess(result)
-      }).catch(err =>{
-        console.log('error', err);
+      }).catch(err => {
+        this.locationError()
       })
     },
-    locationSuccess(result){
+    locationSuccess(result) {
       this.post.location = result.data.city
-      if(result.data.country) {
-        this.post.location += `, ${result.data.country} `
+      if (result.data.country) {
+        this.post.location += `, ${ result.data.country }`
       }
       this.locationLoading = false
     },
     locationError() {
       this.$q.dialog({
         title: 'Error',
-        message: 'Could not find your location'
+        message: 'Could not find your location.'
       })
-      this.locationLoading = true
+      this.locationLoading = false
+    },
+    addPost() {
+
+      let formData = new FormData()
+      formData.append('id', this.post.id)
+      formData.append('caption', this.post.caption)
+      formData.append('location', this.post.location)
+      formData.append('date', this.post.date)
+      formData.append('file', this.post.photo, this.post.id + '.png')
+
+      this.$axios.post(`${ process.env.API }/createPost`, formData).then(response => {
+        console.log('response: ', response)
+        this.$router.push('/')
+        this.$q.notify({
+          message: 'Post created!',
+          actions: [
+            { label: 'Dismiss', color: 'white' }
+          ]
+        })
+        this.$q.loading.hide()
+      }).catch(err => {
+        console.log('err: ', err)
+      })
     }
   },
   mounted() {
     this.initCamera()
-    
-    
-    },
+  },
   beforeDestroy() {
     if (this.hasCameraSupport) {
       this.disableCamera()
